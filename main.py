@@ -3,31 +3,9 @@ import sys
 from pygame.math import Vector2
 
 
-class SNAKE:
-    def __init__(self):
-        self.head_colour = (255, 0, 0)
-        self.body_colour = (255, 255, 255)
-        self.positions = [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
-        self.direction = Vector2(1, 0)
-
-    def draw_snake(self):
-        for pos in self.positions:
-            pos_x = int(pos.x * GRID_SIZE)
-            pos_y = int(pos.y * GRID_SIZE)
-            pos_rect = pygame.Rect(pos_x, pos_y, GRID_SIZE, GRID_SIZE)
-            if pos == self.positions[0]:
-                pygame.draw.rect(screen, self.head_colour, pos_rect)
-            else:
-                pygame.draw.rect(screen, self.body_colour, pos_rect)
-
-    def move_snake(self):
-        self.positions = self.positions[:-1]
-        self.positions.insert(0, self.positions[0] + self.direction)
-
-
 class FOOD:
-    def __init__(self, pic_path):
-        self.image = pygame.image.load(pic_path)
+    def __init__(self):
+        self.image = pygame.image.load('img/apple.png')
         self.position = Vector2(GRID_NUM / 2, GRID_NUM - 5)
         self.direction = Vector2(0, 0)
 
@@ -41,14 +19,56 @@ class FOOD:
         self.position = self.position + self.direction
 
 
+class SNAKE(FOOD):
+    def __init__(self, food_class):
+        super().__init__()
+        self.head_colour = (255, 0, 0)
+        self.body_colour = (255, 255, 255)
+        self.positions = [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
+        self.direction = self.get_direction(food_class.position)
+
+    def draw_snake(self):
+        for pos in self.positions:
+            pos_x = int(pos.x * GRID_SIZE)
+            pos_y = int(pos.y * GRID_SIZE)
+            pos_rect = pygame.Rect(pos_x, pos_y, GRID_SIZE, GRID_SIZE)
+            if pos == self.positions[0]:
+                pygame.draw.rect(screen, self.head_colour, pos_rect)
+            else:
+                pygame.draw.rect(screen, self.body_colour, pos_rect)
+
+    def move_snake(self, food_position):
+        self.direction = self.get_direction(food_position)
+
+        self.positions = self.positions[:-1]
+        self.positions.insert(0, self.positions[0] + self.direction)
+
+    def get_direction(self, food_position):
+        x_diff = food_position.x - self.positions[0].x
+        y_diff = food_position.y - self.positions[0].y
+
+        if abs(y_diff) > abs(x_diff):
+            if y_diff <= 0:
+                direction = UP
+            else:
+                direction = DOWN
+        else:
+            if x_diff <= 0:
+                direction = LEFT
+            else:
+                direction = RIGHT
+
+        return direction
+
+
 class MAIN:
     def __init__(self):
-        self.snake = SNAKE()
-        self.food = FOOD('img/apple.png')
+        self.food = FOOD()
+        self.snake = SNAKE(self.food)
 
     def update(self):
         self.food.move_food()
-        self.snake.move_snake()
+        self.snake.move_snake(self.food.position)
 
     def draw(self):
         self.snake.draw_snake()
