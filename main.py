@@ -16,16 +16,17 @@ class FOOD:
         screen.blit(self.image, food_rect)
 
     def move_food(self):
-        self.position = self.position + self.direction
+        new_pos = self.position + self.direction
+        if 0 <= new_pos.y < GRID_NUM and 0 <= new_pos.x < GRID_NUM:
+            self.position = new_pos
 
 
-class SNAKE(FOOD):
-    def __init__(self, food_class):
-        super().__init__()
+class SNAKE:
+    def __init__(self, food_pos):
         self.head_colour = (255, 0, 0)
         self.body_colour = (255, 255, 255)
         self.positions = [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
-        self.direction = self.get_direction(food_class.position)
+        self.direction = self.get_direction(food_pos)
 
     def draw_snake(self):
         for pos in self.positions:
@@ -37,42 +38,69 @@ class SNAKE(FOOD):
             else:
                 pygame.draw.rect(screen, self.body_colour, pos_rect)
 
-    def move_snake(self, food_position):
+    def move_snake(self, food_position, turn):
         self.direction = self.get_direction(food_position)
 
-        self.positions = self.positions[:-1]
-        self.positions.insert(0, self.positions[0] + self.direction)
+        if turn % 7 != 0:
+            self.positions = self.positions[:-1]
+            self.positions.insert(0, self.positions[0] + self.direction)
+        else:
+            self.positions = self.positions[:]
+            self.positions.insert(0, self.positions[0] + self.direction)
 
     def get_direction(self, food_position):
         x_diff = food_position.x - self.positions[0].x
         y_diff = food_position.y - self.positions[0].y
 
         if abs(y_diff) > abs(x_diff):
-            if y_diff <= 0:
-                direction = UP
+            if y_diff < 0:
+                preferred_direction = UP
             else:
-                direction = DOWN
+                preferred_direction = DOWN
         else:
             if x_diff <= 0:
-                direction = LEFT
+                preferred_direction = LEFT
             else:
-                direction = RIGHT
+                preferred_direction = RIGHT
 
-        return direction
+        return preferred_direction
 
 
 class MAIN:
     def __init__(self):
         self.food = FOOD()
-        self.snake = SNAKE(self.food)
+        self.snake = SNAKE(self.food.position)
+        self.score = 0
+        self.lose = False
 
-    def update(self):
+    def update(self, turn):
         self.food.move_food()
-        self.snake.move_snake(self.food.position)
+        if turn % 2 == 0:
+            self.snake.move_snake(self.food.position, turn)
+
+        self.check_collision()
 
     def draw(self):
         self.snake.draw_snake()
         self.food.draw_food()
+        self.display_score()
+
+    def check_collision(self):
+        for snake_pos in self.snake.positions:
+            if self.food.position == snake_pos:
+                self.lose = True
+                self.food.direction = Vector2(0, 0)
+
+    def display_score(self):
+        score_font = pygame.font.Font(None, 30)
+
+        score = f'Score: {str(self.score)}'
+        score_surface = score_font.render(score, True, (250, 250, 250))
+        score_x = int(SCREEN_WIDTH - 60)
+        score_y = int(SCREEN_HEIGHT - 40)
+        score_rect = score_surface.get_rect(center=(score_x, score_y))
+
+        screen.blit(score_surface, score_rect)
 
 
 pygame.init()
@@ -99,16 +127,18 @@ pygame.time.set_timer(SCREEN_UPDATE, 150)
 
 game = MAIN()
 
+i = 0
 while True:
+    i += 1
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
         if event.type == SCREEN_UPDATE:
-            game.update()
+            game.update(i)
 
-        if event.type == pygame.KEYDOWN:
+        if not game.lose and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 game.food.direction = UP
 
