@@ -38,10 +38,11 @@ class SNAKE:
             else:
                 pygame.draw.rect(screen, self.body_colour, pos_rect)
 
-    def move_snake(self, food_position, turn):
+    def move_snake(self, food_position, score_turn):
+        global turn
         self.direction = self.get_direction(food_position)
 
-        if turn % 7 != 0:
+        if turn % score_turn != 0:
             self.positions = self.positions[:-1]
             self.positions.insert(0, self.positions[0] + self.direction)
         else:
@@ -52,6 +53,7 @@ class SNAKE:
         x_diff = food_position.x - self.positions[0].x
         y_diff = food_position.y - self.positions[0].y
 
+        preferred_direction = Vector2(0, 0)
         if abs(y_diff) > abs(x_diff):
             if y_diff < 0:
                 preferred_direction = UP
@@ -67,16 +69,19 @@ class SNAKE:
 
 
 class MAIN:
-    def __init__(self):
+    def __init__(self, t1, t2):
         self.food = FOOD()
         self.snake = SNAKE(self.food.position)
         self.score = 0
+        self.score_turn = 7
+        self.snake_turn = [t1, t2]  # snake moves 1 out of 2 times
+        self.sped_up = False
         self.lose = False
 
-    def update(self, turn):
+    def update(self):
         self.food.move_food()
-        if turn % 2 == 0:
-            self.snake.move_snake(self.food.position, turn)
+        if turn % self.snake_turn[1] < self.snake_turn[0]:
+            self.snake.move_snake(self.food.position, self.score_turn)
 
         self.check_collision()
 
@@ -88,13 +93,25 @@ class MAIN:
     def check_collision(self):
         for snake_pos in self.snake.positions:
             if self.food.position == snake_pos:
-                self.lose = True
+                # self.lose = True
                 self.food.direction = Vector2(0, 0)
+
+        if not self.lose and turn % self.score_turn == 0:
+            self.score += 1
+            self.sped_up = False
+
+    def increase_snake_speed(self):
+        self.snake_turn[0] = T2
+        self.sped_up = True
+
+    def decrease_snake_speed(self):
+        self.snake_turn[0] = T1
+        self.sped_up = False
 
     def display_score(self):
         score_font = pygame.font.Font(None, 30)
 
-        score = f'Score: {str(self.score)}'
+        score = f'Score: {str(self.score), str(self.snake_turn[0])}'
         score_surface = score_font.render(score, True, (250, 250, 250))
         score_x = int(SCREEN_WIDTH - 60)
         score_y = int(SCREEN_HEIGHT - 40)
@@ -114,6 +131,9 @@ DOWN = Vector2(0, 1)
 LEFT = Vector2(-1, 0)
 RIGHT = Vector2(1, 0)
 
+T1 = 1
+T2 = 2
+
 screen = pygame.display.set_mode(SIZE)
 
 pygame.display.set_caption('Snake')
@@ -123,20 +143,37 @@ pygame.display.set_icon(icon)
 clock = pygame.time.Clock()
 
 SCREEN_UPDATE = pygame.USEREVENT
+SPEEDUP_SNAKE = pygame.USEREVENT + 1
+SLOWDOWN_SNAKE = pygame.USEREVENT + 2
 pygame.time.set_timer(SCREEN_UPDATE, 150)
+pygame.time.set_timer(SPEEDUP_SNAKE, 10000)  # speed up snake every 10sec
+pygame.time.set_timer(SLOWDOWN_SNAKE, 2000)
+pygame.event.set_blocked(SLOWDOWN_SNAKE)
 
-game = MAIN()
+game = MAIN(T1, T2)
 
-i = 0
+turn = 0
 while True:
-    i += 1
+    turn += 1
+    dt = clock.tick(60)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
         if event.type == SCREEN_UPDATE:
-            game.update(i)
+            game.update()
+
+        if not game.sped_up and event.type == SPEEDUP_SNAKE:
+            game.increase_snake_speed()
+            pygame.event.set_allowed(SLOWDOWN_SNAKE)
+            pygame.event.set_blocked(SPEEDUP_SNAKE)
+
+        if game.sped_up and event.type == SLOWDOWN_SNAKE:
+            game.decrease_snake_speed()
+            pygame.event.set_allowed(SPEEDUP_SNAKE)
+            pygame.event.set_blocked(SLOWDOWN_SNAKE)
 
         if not game.lose and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
@@ -151,9 +188,9 @@ while True:
             if event.key == pygame.K_RIGHT:
                 game.food.direction = RIGHT
 
+
     screen.fill((0, 0, 0))
 
     game.draw()
 
     pygame.display.update()
-    clock.tick(60)
