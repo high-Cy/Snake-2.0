@@ -23,8 +23,8 @@ class FOOD:
 
 class SNAKE:
     def __init__(self):
-        self.head_colour = (255, 0, 0)
-        self.body_colour = (255, 255, 255)
+        self.head_colour = RED
+        self.body_colour = WHITE
         self.positions = [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
         self.direction = Vector2(0, 0)
 
@@ -56,7 +56,7 @@ class SNAKE:
         if abs(y_diff) > abs(x_diff):
             if y_diff < 0 and self.direction != DOWN:
                 self.direction = UP
-            elif y_diff >=0 and self.direction != UP:
+            elif y_diff >= 0 and self.direction != UP:
                 self.direction = DOWN
             else:
                 self.direction = RIGHT
@@ -76,7 +76,6 @@ class MAIN:
         self.score = 0
         self.score_turn = 7
         self.snake_turn = [t1, t2]  # snake moves 1 out of 2 times
-        self.sped_up = False
         self.lose = False
         self.border1 = 0
         self.border2 = GRID_NUM
@@ -92,6 +91,7 @@ class MAIN:
         self.snake.draw_snake()
         self.food.draw_food()
         self.display_score()
+        self.draw_borders()
 
     def check_collision(self):
         for snake_pos in self.snake.positions:
@@ -101,17 +101,27 @@ class MAIN:
 
         if not self.lose and turn % self.score_turn == 0:
             self.score += 1
-            self.sped_up = False
 
     def shrink_display(self):
         if self.border1 <= 5:
             self.border1 += 1
             self.border2 -= 1
 
+    def draw_borders(self):
+        for i in range(self.border1):
+            i = i * GRID_SIZE
+            pygame.draw.rect(screen, GREY, [i, 0, GRID_SIZE, SCREEN_HEIGHT])
+            pygame.draw.rect(screen, GREY, [0, i, SCREEN_WIDTH, GRID_SIZE])
+
+        for j in range(self.border2, GRID_NUM):
+            j = j * GRID_SIZE
+            pygame.draw.rect(screen, GREY, [j, 0, GRID_SIZE, SCREEN_HEIGHT])
+            pygame.draw.rect(screen, GREY, [0, j, SCREEN_WIDTH, GRID_SIZE])
+
     def display_score(self):
         score_font = pygame.font.Font(None, 30)
 
-        score = f'Score: {str(self.score), str(self.snake_turn[0])}'
+        score = f'Score: {str(self.score), str(self.border1)}'
         score_surface = score_font.render(score, True, (250, 250, 250))
         score_x = int(SCREEN_WIDTH - 60)
         score_y = int(SCREEN_HEIGHT - 40)
@@ -122,9 +132,17 @@ class MAIN:
 
 pygame.init()
 
+# --- Constants ----------------------------------------------------------------
+MILLI = 1000
+
 GRID_SIZE = 32
 GRID_NUM = 20
 SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = GRID_SIZE * GRID_NUM, GRID_SIZE * GRID_NUM
+
+GREY = (128, 128, 128)
+RED = (255, 0, 0)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 
 UP = Vector2(0, -1)
 DOWN = Vector2(0, 1)
@@ -134,7 +152,8 @@ RIGHT = Vector2(1, 0)
 T1 = 1
 T2 = 2
 
-MILLI = 1000
+# ------------------------------------------------------------------------------
+
 screen = pygame.display.set_mode(SIZE)
 
 pygame.display.set_caption('Snake')
@@ -148,7 +167,7 @@ SPEEDUP_SNAKE = pygame.USEREVENT + 1
 SLOWDOWN_SNAKE = pygame.USEREVENT + 2
 SHRINK_DISPLAY = pygame.USEREVENT + 3
 pygame.time.set_timer(SCREEN_UPDATE, 150)
-pygame.time.set_timer(SHRINK_DISPLAY, 1*MILLI)
+pygame.time.set_timer(SHRINK_DISPLAY, 1 * MILLI)
 
 game = MAIN(T1, T2)
 
@@ -181,7 +200,7 @@ while True:
             if event.key == pygame.K_RIGHT:
                 game.food.direction = RIGHT
 
-    screen.fill((0, 0, 0))
+    screen.fill(BLACK)
 
     game.draw()
 
