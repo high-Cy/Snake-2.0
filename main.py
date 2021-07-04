@@ -90,14 +90,20 @@ class MAIN:
     def draw(self):
         self.snake.draw_snake()
         self.food.draw_food()
-        self.display_score()
         self.draw_borders()
+        self.display_score()
 
     def check_collision(self):
         for snake_pos in self.snake.positions:
             if self.food.position == snake_pos:
                 # self.lose = True
                 self.food.direction = Vector2(0, 0)
+
+        if self.border1 > self.food.position.y or \
+                self.food.position.y > self.border2 or \
+                self.border1 > self.food.position.x or \
+                self.food.position.x > self.border2:
+            self.lose = True
 
         if not self.lose and turn % self.score_turn == 0:
             self.score += 1
@@ -129,8 +135,37 @@ class MAIN:
 
         screen.blit(score_surface, score_rect)
 
+    @staticmethod
+    def game_over_menu():
+        lose_font = pygame.font.Font(None, 60)
+        lose_surface = lose_font.render('GAME OVER!', True, (250, 250, 250))
+        lose_x = int(SCREEN_WIDTH / 2)
+        lose_y = int(SCREEN_HEIGHT / 2 - 2 * GRID_SIZE)
+        lose_rect = lose_surface.get_rect(center=(lose_x, lose_y))
 
-pygame.init()
+        restart_font = pygame.font.Font(None, 32)
+        restart_surface = restart_font.render('Restart with Spacebar', True,
+                                              (250, 250, 250))
+        restart_x = lose_x
+        restart_y = lose_y + 2 * GRID_SIZE
+        restart_rect = restart_surface.get_rect(center=(restart_x, restart_y))
+
+        bg_rect = pygame.Rect(restart_rect.left - 5, restart_rect.top - 5,
+                              restart_rect.width + 10, restart_rect.height + 5)
+
+        pygame.draw.rect(screen, (93, 93, 93), bg_rect)
+        screen.blit(restart_surface, restart_rect)
+        screen.blit(lose_surface, lose_rect)
+
+    def reset(self):
+        self.food.position = Vector2(GRID_NUM / 2, GRID_NUM - 5)
+        self.snake.positions = [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
+        self.snake.direction = Vector2(1, 0)
+        self.score = 0
+        self.border1 = 0
+        self.border2 = GRID_NUM
+        self.lose = False
+
 
 # --- Constants ----------------------------------------------------------------
 MILLI = 1000
@@ -154,6 +189,8 @@ T2 = 2
 
 # ------------------------------------------------------------------------------
 
+pygame.init()
+
 screen = pygame.display.set_mode(SIZE)
 
 pygame.display.set_caption('Snake')
@@ -163,11 +200,9 @@ pygame.display.set_icon(icon)
 clock = pygame.time.Clock()
 
 SCREEN_UPDATE = pygame.USEREVENT
-SPEEDUP_SNAKE = pygame.USEREVENT + 1
-SLOWDOWN_SNAKE = pygame.USEREVENT + 2
-SHRINK_DISPLAY = pygame.USEREVENT + 3
+SHRINK_DISPLAY = pygame.USEREVENT + 1
 pygame.time.set_timer(SCREEN_UPDATE, 150)
-pygame.time.set_timer(SHRINK_DISPLAY, 1 * MILLI)
+pygame.time.set_timer(SHRINK_DISPLAY, 10 * MILLI)
 
 game = MAIN(T1, T2)
 
@@ -200,8 +235,16 @@ while True:
             if event.key == pygame.K_RIGHT:
                 game.food.direction = RIGHT
 
+        if game.lose:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    game.reset()
+
     screen.fill(BLACK)
 
     game.draw()
+
+    if game.lose:
+        game.game_over_menu()
 
     pygame.display.update()
