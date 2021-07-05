@@ -127,7 +127,7 @@ class MAIN:
     def display_score(self):
         score_font = pygame.font.Font(None, 30)
 
-        score = f'Score: {str(self.score), str(self.border1)}'
+        score = f'Score: {str(self.score)}'
         score_surface = score_font.render(score, True, WHITE)
         score_x = int(SCREEN_WIDTH - 60)
         score_y = int(SCREEN_HEIGHT - 40)
@@ -140,7 +140,7 @@ class MAIN:
         lose_font = pygame.font.Font(None, 60)
         lose_surface = lose_font.render('GAME OVER!', True, RED)
         lose_x = int(SCREEN_WIDTH / 2)
-        lose_y = int(SCREEN_HEIGHT / 2 - 2 * GRID_SIZE)
+        lose_y = int(SCREEN_HEIGHT / 2 - 5 * GRID_SIZE)
         lose_rect = lose_surface.get_rect(center=(lose_x, lose_y))
 
         restart_font = pygame.font.Font(None, 32)
